@@ -55,11 +55,13 @@ public class RtmpEncoder extends MessageToByteEncoder {
     if (input instanceof RtmpMessage) {
       RtmpMessage message = (RtmpMessage) input;
       try {
+        if (message.getChunkStreamId() > 64) {
+          // TODO
+        }
         out.writeByte((message.getFm() << 6) | message.getChunkStreamId());
         if (message.getFm() != 3) {
           out.writeMedium(message.getTimestamp());
         }
-        out.writeMedium(0);
         if (message.getFm() < 2) {
           out.writeMedium(message.getPayload().readableBytes());
           out.writeByte(message.getTypeId());
@@ -71,9 +73,11 @@ public class RtmpEncoder extends MessageToByteEncoder {
         // if payload size is greater than chunk size, need split the package.
         while (message.getPayload().readableBytes() > chunkSize) {
           out.writeBytes(message.getPayload(), message.getPayload().readerIndex(), chunkSize);
+          message.getPayload().skipBytes(chunkSize);
           out.writeByte((3 << 6) | message.getChunkStreamId());
         }
         out.writeBytes(message.getPayload(), message.getPayload().readerIndex(), message.getPayload().readableBytes());
+        message.getPayload().skipBytes(message.getPayload().readableBytes());
       } finally {
         message.recycle();
       }

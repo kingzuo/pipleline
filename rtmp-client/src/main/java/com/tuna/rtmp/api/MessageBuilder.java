@@ -1,10 +1,11 @@
 package com.tuna.rtmp.api;
 
 import com.tuna.rtmp.client.RtmpContext;
+import io.netty.buffer.ByteBuf;
 
 public class MessageBuilder implements Constants {
 
-  public RtmpMessage createConnect(long transId, RtmpContext context) {
+  public static RtmpMessage createConnect(long transId, RtmpContext context) {
     RtmpMessage message = RtmpMessage.create();
     message.setFm(0);
     message.setChunkStreamId(3);
@@ -40,7 +41,7 @@ public class MessageBuilder implements Constants {
     return message;
   }
 
-  public RtmpMessage createAcknowledgement(int size) {
+  public static RtmpMessage createAcknowledgement(int size) {
     RtmpMessage message = RtmpMessage.create();
     message.setFm(0);
     message.setChunkStreamId(3);
@@ -51,7 +52,7 @@ public class MessageBuilder implements Constants {
     return message;
   }
 
-  public RtmpMessage createAcknowledgementWindowSize(int size) {
+  public static RtmpMessage createAcknowledgementWindowSize(int size) {
     RtmpMessage message = RtmpMessage.create();
     message.setFm(0);
     message.setChunkStreamId(2);
@@ -62,7 +63,7 @@ public class MessageBuilder implements Constants {
     return message;
   }
 
-  public RtmpMessage createSetPeerBandWidth(int size) {
+  public static RtmpMessage createSetPeerBandWidth(int size) {
     RtmpMessage message = RtmpMessage.create();
     message.setFm(0);
     message.setChunkStreamId(2);
@@ -74,7 +75,7 @@ public class MessageBuilder implements Constants {
     return message;
   }
 
-  public RtmpMessage createSetChunkSize(int size) {
+  public static RtmpMessage createSetChunkSize(int size) {
     RtmpMessage message = RtmpMessage.create();
     message.setFm(0);
     message.setChunkStreamId(2);
@@ -85,7 +86,7 @@ public class MessageBuilder implements Constants {
     return message;
   }
 
-  public RtmpMessage createStream(long transId) {
+  public static RtmpMessage createStream(long transId) {
     RtmpMessage message = RtmpMessage.create();
     message.setFm(0);
     message.setChunkStreamId(3);
@@ -98,7 +99,7 @@ public class MessageBuilder implements Constants {
     return message;
   }
 
-  public RtmpMessage createFCPublish(long transId, RtmpContext context) {
+  public static RtmpMessage createFCPublish(long transId, RtmpContext context) {
     RtmpMessage message = RtmpMessage.create();
     message.setFm(0);
     message.setChunkStreamId(3);
@@ -112,7 +113,7 @@ public class MessageBuilder implements Constants {
     return message;
   }
 
-  public RtmpMessage createPublish(long transId, RtmpContext context) {
+  public static RtmpMessage createPublish(long transId, RtmpContext context) {
     RtmpMessage message = RtmpMessage.create();
     message.setFm(0);
     message.setChunkStreamId(4);
@@ -124,6 +125,28 @@ public class MessageBuilder implements Constants {
     ProtocolUtils.writeAmfNull(message.getPayload());
     ProtocolUtils.writeAmfString(message.getPayload(), context.getName());
     ProtocolUtils.writeAmfString(message.getPayload(), context.getApp());
+    return message;
+  }
+
+  public static RtmpMessage createVideo(ByteBuf video, RtmpContext context) {
+    RtmpMessage message = RtmpMessage.create();
+    message.setFm(0);
+    message.setChunkStreamId(9);
+    message.setTimestamp(0);
+    message.setTypeId(MSG_TYPE_VIDEO);
+    message.setStreamId(context.getStreamId());
+    message.getPayload().writeBytes(video);
+    return message;
+  }
+
+  public static RtmpMessage createAudeo(ByteBuf audeo, RtmpContext context) {
+    RtmpMessage message = RtmpMessage.create();
+    message.setFm(0);
+    message.setChunkStreamId(8);
+    message.setTimestamp(0);
+    message.setTypeId(MSG_TYPE_VIDEO);
+    message.setStreamId(context.getStreamId());
+    message.getPayload().writeBytes(audeo);
     return message;
   }
 }
