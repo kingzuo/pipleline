@@ -19,6 +19,7 @@ public class ClientTest {
     context.setVidioCodecs(128);
     context.setVidioFunction(1);
     context.setTcUrl("rtmp://127.0.0.1:1935/live");
+    context.setLogActivity(true);
 
     RtmpClient rtmpClient = RtmpClient.create(vertx, context);
     rtmpClient.handshake(v -> {
@@ -28,8 +29,13 @@ public class ClientTest {
             rtmpClient.createStream(s -> {
               if (s.succeeded()) {
                 rtmpClient.fcPublish(f -> {
-                  rtmpClient.publish(p -> {
-                  });
+                  if (f.succeeded()) {
+                    rtmpClient.publish(p -> {
+                      if (p.succeeded()) {
+
+                      }
+                    });
+                  }
                 });
               }
             });

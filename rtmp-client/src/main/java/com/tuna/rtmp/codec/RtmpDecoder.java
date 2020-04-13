@@ -2,6 +2,7 @@ package com.tuna.rtmp.codec;
 
 import com.tuna.rtmp.api.Constants;
 import com.tuna.rtmp.api.RtmpMessage;
+import com.tuna.rtmp.client.RtmpClientImpl;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
@@ -47,10 +48,10 @@ import java.util.List;
  * Now we just decode the fmt=0 and fmt=3 split case.
  */
 public class RtmpDecoder extends ByteToMessageDecoder {
-  private int chunkSize;
+  private final RtmpClientImpl rtmpClient;
 
-  public RtmpDecoder() {
-    chunkSize = Constants.DEFAULT_CHUNK_SIZE;
+  public RtmpDecoder(RtmpClientImpl rtmpClient) {
+    this.rtmpClient = rtmpClient;
   }
 
   @Override
@@ -82,7 +83,7 @@ public class RtmpDecoder extends ByteToMessageDecoder {
       return;
     }
 
-    int totalSize = headSize + payLoadSize + payLoadSize / chunkSize;
+    int totalSize = headSize + payLoadSize + payLoadSize / rtmpClient.getChunkSize();
 
     if (input.readableBytes() < totalSize) {
       return;
@@ -97,13 +98,13 @@ public class RtmpDecoder extends ByteToMessageDecoder {
     message.setTypeId(input.readUnsignedByte());
     message.setStreamId(input.readIntLE());
     // payload
-    if (payLoadSize > chunkSize) {
+    if (payLoadSize > rtmpClient.getChunkSize()) {
       int readSize = 0;
       while (readSize < payLoadSize) {
         int remain = payLoadSize - readSize;
-        message.getPayload().writeBytes(input, Math.min(chunkSize, remain));
-        readSize += Math.min(chunkSize, remain);
-        if (remain > chunkSize) {
+        message.getPayload().writeBytes(input, Math.min(rtmpClient.getChunkSize(), remain));
+        readSize += Math.min(rtmpClient.getChunkSize(), remain);
+        if (remain > rtmpClient.getChunkSize()) {
           input.skipBytes(1);
           readSize ++;
         }

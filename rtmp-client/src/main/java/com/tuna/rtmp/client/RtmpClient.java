@@ -15,10 +15,6 @@ public interface RtmpClient {
 
   void connect(Handler<AsyncResult<Void>> handler);
 
-  void acknowledgement(long size, Handler<AsyncResult<Void>> handler);
-
-  void acknowledgementWindowSize(long size, Handler<AsyncResult<Void>> handler);
-
   void createStream(Handler<AsyncResult<Void>> handler);
 
   void fcPublish(Handler<AsyncResult<Void>> handler);
@@ -28,4 +24,12 @@ public interface RtmpClient {
   void sendVideo(ByteBuf payload, Handler<AsyncResult<Void>> handler);
 
   void sendAudeo(ByteBuf payload, Handler<AsyncResult<Void>> handler);
+
+  void sendVideo(ByteBuf payload);
+
+  void sendAudeo(ByteBuf payload);
+
+  void close(Handler<AsyncResult<Void>> handler);
+
+  void close();
 }

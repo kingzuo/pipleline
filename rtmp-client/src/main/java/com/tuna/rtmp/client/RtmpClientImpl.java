@@ -21,6 +21,8 @@ import io.vertx.core.impl.NetSocketInternal;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class RtmpClientImpl implements RtmpClient {
@@ -36,6 +38,9 @@ public class RtmpClientImpl implements RtmpClient {
   private int chunkSize = DEFAULT_CHUNK_SIZE;
   private int ackWindowSize = 500000;
 
+  private Map<Long, Handler<AsyncResult<Void>>> callBackHandler = new ConcurrentHashMap();
+  private Map<Long, String> callBackHandlerType = new ConcurrentHashMap();
+
   public RtmpClientImpl(Vertx vertx, RtmpContext context) {
     this.vertx = vertx;
     this.context = context;
@@ -45,7 +50,7 @@ public class RtmpClientImpl implements RtmpClient {
   public void handshake(Handler<AsyncResult<Void>> handler) {
     NetClientOptions options = new NetClientOptions().setConnectTimeout(6000);
     options.setReconnectAttempts(3).setReconnectInterval(1000);
-    options.setLogActivity(true);
+    options.setLogActivity(context.isLogActivity());
     options.setTcpNoDelay(true);
     options.setTcpKeepAlive(true);
 
@@ -56,7 +61,9 @@ public class RtmpClientImpl implements RtmpClient {
 
     connectPromise.future().compose(netSocket -> {
       RtmpClientImpl.this.socket = (NetSocketInternal) netSocket;
-      socket.channelHandlerContext().pipeline().addBefore("handler", "logger", new LoggingHandler(LogLevel.INFO));
+      if (context.isLogActivity()) {
+        socket.channelHandlerContext().pipeline().addBefore("handler", "logger", new LoggingHandler(LogLevel.INFO));
+      }
       socket.channelHandlerContext().pipeline()
           .addBefore("handler", "handshakeDecoder", new FixedLengthFrameDecoder(1 + C1C2_LENGTH * 2));
 
@@ -81,8 +88,8 @@ public class RtmpClientImpl implements RtmpClient {
       try {
         if (v.succeeded()) {
           socket.channelHandlerContext().pipeline().remove("handshakeDecoder");
-          socket.channelHandlerContext().pipeline().addBefore("handler", "rtmpEncoder", new RtmpEncoder());
-          socket.channelHandlerContext().pipeline().addBefore("handler", "rtmpDecoder", new RtmpDecoder());
+          socket.channelHandlerContext().pipeline().addBefore("handler", "rtmpEncoder", new RtmpEncoder(RtmpClientImpl.this));
+          socket.channelHandlerContext().pipeline().addBefore("handler", "rtmpDecoder", new RtmpDecoder(RtmpClientImpl.this));
           socket.messageHandler(this::rtmpMessageHandler);
         }
         handler.handle(v);
@@ -139,37 +146,70 @@ public class RtmpClientImpl implements RtmpClient {
   }
 
   protected void handAmfCommandResponse(RtmpMessage rtmpMessage) {
+    ProtocolUtils.readAmfString(rtmpMessage.getPayload());
+    long tsId = ProtocolUtils.readAmfNumber(rtmpMessage.getPayload());
+    if (callBackHandler.containsKey(tsId)) {
+      callBackHandler.get(tsId).handle(Future.succeededFuture());
+      callBackHandler.remove(tsId);
+    }
 
+    // Process rtmp server allocate information.
+    if (callBackHandlerType.containsKey(tsId)) {
+      if (callBackHandlerType.get(tsId).equals(AMF_CMD_CREATE_STREAM)) {
+        ProtocolUtils.readAmfNull(rtmpMessage.getPayload());
+        long streamId = ProtocolUtils.readAmfNumber(rtmpMessage.getPayload());
+        context.setStreamId((int) streamId);
+      }
+      callBackHandlerType.remove(tsId);
+    }
   }
 
   @Override
   public void connect(Handler<AsyncResult<Void>> handler) {
-    socket.writeMessage(MessageBuilder.createConnect(transId.getAndIncrement(), context), handler);
+    long id = transId.getAndIncrement();
+    callBackHandler.put(id, handler);
+    socket.writeMessage(MessageBuilder.createConnect(id, context));
+    vertx.setTimer(context.getRtimeout(), timerId-> {
+      if (callBackHandler.containsKey(id)) {
+        callBackHandler.get(id).handle(Future.failedFuture("Request timeout"));
+        callBackHandler.remove(id);
+      }
+    });
   }
 
-  @Override
   public void acknowledgement(long size, Handler<AsyncResult<Void>> handler) {
     socket.writeMessage(MessageBuilder.createAcknowledgement((int) size), handler);
   }
 
-  @Override
   public void acknowledgementWindowSize(long size, Handler<AsyncResult<Void>> handler) {
     socket.writeMessage(MessageBuilder.createAcknowledgementWindowSize((int) size), handler);
   }
 
   @Override
   public void createStream(Handler<AsyncResult<Void>> handler) {
-    socket.writeMessage(MessageBuilder.createStream(transId.getAndIncrement()), handler);
+    long id = transId.getAndIncrement();
+    callBackHandler.put(id, handler);
+    callBackHandlerType.put(id, AMF_CMD_CREATE_STREAM);
+    socket.writeMessage(MessageBuilder.createStream(id));
+    vertx.setTimer(context.getRtimeout(), timerId-> {
+      if (callBackHandler.containsKey(id)) {
+        callBackHandler.get(id).handle(Future.failedFuture("Request timeout"));
+        callBackHandler.remove(id);
+        callBackHandlerType.remove(id);
+      }
+    });
   }
 
   @Override
   public void fcPublish(Handler<AsyncResult<Void>> handler) {
-    socket.writeMessage(MessageBuilder.createFCPublish(transId.getAndIncrement(), context), handler);
+    long id = transId.getAndIncrement();
+    socket.writeMessage(MessageBuilder.createFCPublish(id, context), handler);
   }
 
   @Override
   public void publish(Handler<AsyncResult<Void>> handler) {
-    socket.writeMessage(MessageBuilder.createPublish(transId.getAndIncrement(), context), handler);
+    long id = transId.getAndIncrement();
+    socket.writeMessage(MessageBuilder.createPublish(id, context), handler);
   }
 
   @Override
@@ -180,5 +220,31 @@ public class RtmpClientImpl implements RtmpClient {
   @Override
   public void sendAudeo(ByteBuf payload, Handler<AsyncResult<Void>> handler) {
     socket.writeMessage(MessageBuilder.createAudeo(payload, context), handler);
+  }
+
+  @Override
+  public void sendVideo(ByteBuf payload) {
+    socket.writeMessage(MessageBuilder.createVideo(payload, context));
+  }
+
+  @Override
+  public void sendAudeo(ByteBuf payload) {
+    socket.writeMessage(MessageBuilder.createAudeo(payload, context));
+  }
+
+  @Override
+  public void close(Handler<AsyncResult<Void>> handler) {
+
+  }
+
+  @Override
+  public void close() {
+    socket.close();
+    netClient.close();
+    vertx.close();
+  }
+
+  public int getChunkSize() {
+    return chunkSize;
   }
 }

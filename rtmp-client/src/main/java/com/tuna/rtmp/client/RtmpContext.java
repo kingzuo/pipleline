@@ -38,7 +38,12 @@ public class RtmpContext {
   private String aacSpecificConfig;
   // user set timeout, in ms.
   private long stimeout;
-  private long rtimeout;
+  /**
+   * Request time out ms
+   */
+  private long rtimeout = 6000;
+
+  private boolean logActivity = false;
 
   public String getHost() {
     return host;
@@ -214,5 +219,13 @@ public class RtmpContext {
 
   public void setStreamId(int streamId) {
     this.streamId = streamId;
+  }
+
+  public boolean isLogActivity() {
+    return logActivity;
+  }
+
+  public void setLogActivity(boolean logActivity) {
+    this.logActivity = logActivity;
   }
 }

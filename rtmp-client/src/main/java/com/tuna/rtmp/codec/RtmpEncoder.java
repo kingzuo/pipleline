@@ -2,6 +2,7 @@ package com.tuna.rtmp.codec;
 
 import com.tuna.rtmp.api.Constants;
 import com.tuna.rtmp.api.RtmpMessage;
+import com.tuna.rtmp.client.RtmpClientImpl;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
@@ -44,10 +45,10 @@ import io.netty.handler.codec.MessageToByteEncoder;
  */
 public class RtmpEncoder extends MessageToByteEncoder {
 
-  private int chunkSize;
+  private final RtmpClientImpl rtmpClient;
 
-  public RtmpEncoder() {
-    chunkSize = Constants.DEFAULT_CHUNK_SIZE;
+  public RtmpEncoder(RtmpClientImpl rtmpClient) {
+    this.rtmpClient = rtmpClient;
   }
 
   @Override
@@ -71,9 +72,9 @@ public class RtmpEncoder extends MessageToByteEncoder {
         }
 
         // if payload size is greater than chunk size, need split the package.
-        while (message.getPayload().readableBytes() > chunkSize) {
-          out.writeBytes(message.getPayload(), message.getPayload().readerIndex(), chunkSize);
-          message.getPayload().skipBytes(chunkSize);
+        while (message.getPayload().readableBytes() > rtmpClient.getChunkSize()) {
+          out.writeBytes(message.getPayload(), message.getPayload().readerIndex(), rtmpClient.getChunkSize());
+          message.getPayload().skipBytes(rtmpClient.getChunkSize());
           out.writeByte((3 << 6) | message.getChunkStreamId());
         }
         out.writeBytes(message.getPayload(), message.getPayload().readerIndex(), message.getPayload().readableBytes());

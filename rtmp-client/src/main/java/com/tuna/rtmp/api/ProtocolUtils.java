@@ -1,7 +1,6 @@
 package com.tuna.rtmp.api;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufUtil;
 import java.nio.charset.Charset;
 import org.apache.commons.lang3.RandomUtils;
@@ -100,10 +99,10 @@ public class ProtocolUtils implements Constants {
     byteBuf.writeByte(AMF_TYPE_NULL);
   }
 
-  public static void main(String[] args) {
-    ByteBuf byteBuf = ByteBufAllocator.DEFAULT.buffer();
-//    writeAmfNumber(byteBuf, 1);
-    writeAmfString(byteBuf, "connect");
-    System.out.println(ByteBufUtil.hexDump(byteBuf));
+  public static void readAmfNull(ByteBuf byteBuf) {
+    int type = byteBuf.readUnsignedByte();
+    if (type != AMF_TYPE_NULL) {
+      throw new RuntimeException("readAmfNull err:" + ByteBufUtil.hexDump(byteBuf));
+    }
   }
 }

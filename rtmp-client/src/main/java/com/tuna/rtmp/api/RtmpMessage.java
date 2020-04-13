@@ -37,6 +37,7 @@ public class RtmpMessage {
     timestamp = -1;
     typeId = -1;
     streamId = -1;
+    payload.clear();
     ReferenceCountUtil.safeRelease(payload);
     recyclerHandle.recycle(this);
   }
