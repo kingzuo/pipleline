@@ -128,23 +128,23 @@ public class MessageBuilder implements Constants {
     return message;
   }
 
-  public static RtmpMessage createVideo(ByteBuf video, RtmpContext context) {
+  public static RtmpMessage createVideo(int timestamp, ByteBuf video, RtmpContext context) {
     RtmpMessage message = RtmpMessage.create();
     message.setFm(0);
     message.setChunkStreamId(9);
-    message.setTimestamp(0);
+    message.setTimestamp(timestamp);
     message.setTypeId(MSG_TYPE_VIDEO);
     message.setStreamId(context.getStreamId());
     message.getPayload().writeBytes(video);
     return message;
   }
 
-  public static RtmpMessage createAudeo(ByteBuf audeo, RtmpContext context) {
+  public static RtmpMessage createAudeo(int timestamp, ByteBuf audeo, RtmpContext context) {
     RtmpMessage message = RtmpMessage.create();
     message.setFm(0);
     message.setChunkStreamId(8);
-    message.setTimestamp(0);
-    message.setTypeId(MSG_TYPE_VIDEO);
+    message.setTimestamp(timestamp);
+    message.setTypeId(MSG_TYPE_AUDIO);
     message.setStreamId(context.getStreamId());
     message.getPayload().writeBytes(audeo);
     return message;

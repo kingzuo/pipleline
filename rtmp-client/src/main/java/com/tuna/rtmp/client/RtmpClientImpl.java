@@ -1,6 +1,24 @@
 package com.tuna.rtmp.client;
 
-import static com.tuna.rtmp.api.Constants.*;
+import static com.tuna.rtmp.api.Constants.AMF_CMD_CREATE_STREAM;
+import static com.tuna.rtmp.api.Constants.C1C2_LENGTH;
+import static com.tuna.rtmp.api.Constants.DEFAULT_CHUNK_SIZE;
+import static com.tuna.rtmp.api.Constants.MSG_TYPE_ABORT;
+import static com.tuna.rtmp.api.Constants.MSG_TYPE_ACK;
+import static com.tuna.rtmp.api.Constants.MSG_TYPE_ACK_SIZE;
+import static com.tuna.rtmp.api.Constants.MSG_TYPE_AMF3_CMD;
+import static com.tuna.rtmp.api.Constants.MSG_TYPE_AMF3_META;
+import static com.tuna.rtmp.api.Constants.MSG_TYPE_AMF3_SHARED;
+import static com.tuna.rtmp.api.Constants.MSG_TYPE_AMF_CMD;
+import static com.tuna.rtmp.api.Constants.MSG_TYPE_AMF_META;
+import static com.tuna.rtmp.api.Constants.MSG_TYPE_AMF_SHARED;
+import static com.tuna.rtmp.api.Constants.MSG_TYPE_AUDIO;
+import static com.tuna.rtmp.api.Constants.MSG_TYPE_BANDWIDTH;
+import static com.tuna.rtmp.api.Constants.MSG_TYPE_CHUNK_SIZE;
+import static com.tuna.rtmp.api.Constants.MSG_TYPE_EDGE;
+import static com.tuna.rtmp.api.Constants.MSG_TYPE_UNDEFINED;
+import static com.tuna.rtmp.api.Constants.MSG_TYPE_USER;
+import static com.tuna.rtmp.api.Constants.MSG_TYPE_VIDEO;
 
 import com.tuna.rtmp.api.MessageBuilder;
 import com.tuna.rtmp.api.ProtocolUtils;
@@ -53,6 +71,7 @@ public class RtmpClientImpl implements RtmpClient {
     options.setLogActivity(context.isLogActivity());
     options.setTcpNoDelay(true);
     options.setTcpKeepAlive(true);
+    options.setTcpFastOpen(true);
 
     netClient = vertx.createNetClient(options);
 
@@ -88,8 +107,10 @@ public class RtmpClientImpl implements RtmpClient {
       try {
         if (v.succeeded()) {
           socket.channelHandlerContext().pipeline().remove("handshakeDecoder");
-          socket.channelHandlerContext().pipeline().addBefore("handler", "rtmpEncoder", new RtmpEncoder(RtmpClientImpl.this));
-          socket.channelHandlerContext().pipeline().addBefore("handler", "rtmpDecoder", new RtmpDecoder(RtmpClientImpl.this));
+          socket.channelHandlerContext().pipeline()
+              .addBefore("handler", "rtmpEncoder", new RtmpEncoder(RtmpClientImpl.this));
+          socket.channelHandlerContext().pipeline()
+              .addBefore("handler", "rtmpDecoder", new RtmpDecoder(RtmpClientImpl.this));
           socket.messageHandler(this::rtmpMessageHandler);
         }
         handler.handle(v);
@@ -104,8 +125,8 @@ public class RtmpClientImpl implements RtmpClient {
       RtmpMessage rtmpMessage = (RtmpMessage) msg;
       switch (rtmpMessage.getTypeId()) {
         case MSG_TYPE_CHUNK_SIZE:
-          this.chunkSize = rtmpMessage.getPayload().readInt();
-          socket.writeMessage(MessageBuilder.createSetChunkSize(chunkSize));
+//          this.chunkSize = rtmpMessage.getPayload().readInt();
+//          socket.writeMessage(MessageBuilder.createSetChunkSize(chunkSize));
           break;
         case MSG_TYPE_ABORT:
           break;
@@ -169,7 +190,7 @@ public class RtmpClientImpl implements RtmpClient {
     long id = transId.getAndIncrement();
     callBackHandler.put(id, handler);
     socket.writeMessage(MessageBuilder.createConnect(id, context));
-    vertx.setTimer(context.getRtimeout(), timerId-> {
+    vertx.setTimer(context.getRtimeout(), timerId -> {
       if (callBackHandler.containsKey(id)) {
         callBackHandler.get(id).handle(Future.failedFuture("Request timeout"));
         callBackHandler.remove(id);
@@ -191,7 +212,7 @@ public class RtmpClientImpl implements RtmpClient {
     callBackHandler.put(id, handler);
     callBackHandlerType.put(id, AMF_CMD_CREATE_STREAM);
     socket.writeMessage(MessageBuilder.createStream(id));
-    vertx.setTimer(context.getRtimeout(), timerId-> {
+    vertx.setTimer(context.getRtimeout(), timerId -> {
       if (callBackHandler.containsKey(id)) {
         callBackHandler.get(id).handle(Future.failedFuture("Request timeout"));
         callBackHandler.remove(id);
@@ -213,23 +234,23 @@ public class RtmpClientImpl implements RtmpClient {
   }
 
   @Override
-  public void sendVideo(ByteBuf payload, Handler<AsyncResult<Void>> handler) {
-    socket.writeMessage(MessageBuilder.createVideo(payload, context), handler);
+  public void sendVideo(int timestamp, ByteBuf payload, Handler<AsyncResult<Void>> handler) {
+    socket.writeMessage(MessageBuilder.createVideo(timestamp, payload, context), handler);
   }
 
   @Override
-  public void sendAudeo(ByteBuf payload, Handler<AsyncResult<Void>> handler) {
-    socket.writeMessage(MessageBuilder.createAudeo(payload, context), handler);
+  public void sendAudeo(int timestamp, ByteBuf payload, Handler<AsyncResult<Void>> handler) {
+    socket.writeMessage(MessageBuilder.createAudeo(timestamp, payload, context), handler);
   }
 
   @Override
-  public void sendVideo(ByteBuf payload) {
-    socket.writeMessage(MessageBuilder.createVideo(payload, context));
+  public void sendVideo(int timestamp, ByteBuf payload) {
+    socket.writeMessage(MessageBuilder.createVideo(timestamp, payload, context));
   }
 
   @Override
-  public void sendAudeo(ByteBuf payload) {
-    socket.writeMessage(MessageBuilder.createAudeo(payload, context));
+  public void sendAudeo(int timestamp, ByteBuf payload) {
+    socket.writeMessage(MessageBuilder.createAudeo(timestamp, payload, context));
   }
 
   @Override

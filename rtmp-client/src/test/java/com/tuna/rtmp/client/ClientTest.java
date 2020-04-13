@@ -16,14 +16,14 @@ public class ClientTest {
     context.setHost("127.0.0.1");
     context.setPort(1935);
     context.setApp("live");
-    context.setName("test1");
+    context.setName("test");
     context.setFpad(false);
     context.setFlashver("FMLE/3.0 (compatible; FMSc/1.0)");
     context.setCapabilities(239);
     context.setAudioCodecs(1024);
     context.setVidioCodecs(128);
     context.setVidioFunction(1);
-    context.setTcUrl("rtmp://127.0.0.1:1935/live");
+    context.setTcUrl("rtmp://192.168.1.106:1935/live");
     context.setLogActivity(true);
 
     RtmpClient rtmpClient = RtmpClient.create(vertx, context);
@@ -39,10 +39,11 @@ public class ClientTest {
                       if (p.succeeded()) {
                         vertx.executeBlocking(future -> {
                           try {
-                            byte[] flvBuf = FileUtils.readFileToByteArray(new File("C:\\Users\\xushuyang\\Desktop\\2020-04-12_23-18-12.flv"));
+                            byte[] flvBuf = FileUtils.readFileToByteArray(new File("F:\\2020-04-12_23-18-12.flv"));
                             ByteBuf flv = ByteBufAllocator.DEFAULT.buffer(flvBuf.length);
                             flv.writeBytes(flvBuf);
                             try {
+                              int ts = 0;
                               flv.skipBytes(9);
                               while (flv.readableBytes() > 3) {
                                 System.out.print("PreviousTagSize:" + flv.readUnsignedInt());
@@ -61,18 +62,20 @@ public class ClientTest {
                                 }
                                 int tagDataSize = flv.readUnsignedMedium();
                                 System.out.print(" tagDataSize:" + tagDataSize);
-                                System.out.print(" timestamp:" + flv.readUnsignedMedium());
+                                int timestamp = flv.readUnsignedMedium();
+                                System.out.print(" timestamp:" + timestamp);
                                 System.out.print(" ExTimestamp:" + flv.readUnsignedByte());
-                                System.out.print(" StreamId:" + flv.readUnsignedMedium());
+                                System.out.println(" StreamId:" + flv.readUnsignedMedium());
                                 ByteBuf data = flv.slice(flv.readerIndex(), tagDataSize);
                                 if (tmp == 0x08) { // 音频
-//                                  rtmpClient.sendAudeo(data);
+                                  rtmpClient.sendAudeo(ts, data);
                                 } else if (tmp == 0x09) { // 视频
-                                  rtmpClient.sendVideo(data);
+                                  rtmpClient.sendVideo(ts, data);
                                 } else if (tmp == 0x12) {
                                 }
                                 flv.skipBytes(tagDataSize);
-                                Thread.sleep(200);
+                                Thread.sleep(40);
+                                ts += 40;
                               }
                             } finally {
                               ReferenceCountUtil.safeRelease(flv);

@@ -11,7 +11,7 @@ import org.apache.commons.io.FileUtils;
 public class FlvFileFormatTest {
 
   public static void main(String[] args) throws IOException {
-    byte[] flvBuf = FileUtils.readFileToByteArray(new File("C:\\Users\\xushuyang\\Desktop\\2020-04-12_23-18-12.flv"));
+    byte[] flvBuf = FileUtils.readFileToByteArray(new File("F:\\2020-04-12_23-18-12.flv"));
     ByteBuf byteBuf = ByteBufAllocator.DEFAULT.buffer(flvBuf.length);
     byteBuf.writeBytes(flvBuf);
     try {
