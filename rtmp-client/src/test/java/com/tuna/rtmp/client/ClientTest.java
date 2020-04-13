@@ -6,6 +6,7 @@ import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.Vertx;
 import java.io.File;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.RandomUtils;
 
 public class ClientTest {
 
@@ -43,7 +44,7 @@ public class ClientTest {
                             ByteBuf flv = ByteBufAllocator.DEFAULT.buffer(flvBuf.length);
                             flv.writeBytes(flvBuf);
                             try {
-                              int ts = 0;
+                              int vs = 0;
                               flv.skipBytes(9);
                               while (flv.readableBytes() > 3) {
                                 System.out.print("PreviousTagSize:" + flv.readUnsignedInt());
@@ -68,14 +69,14 @@ public class ClientTest {
                                 System.out.println(" StreamId:" + flv.readUnsignedMedium());
                                 ByteBuf data = flv.slice(flv.readerIndex(), tagDataSize);
                                 if (tmp == 0x08) { // 音频
-                                  rtmpClient.sendAudeo(ts, data);
+                                  rtmpClient.sendAudeo(vs, data);
                                 } else if (tmp == 0x09) { // 视频
-                                  rtmpClient.sendVideo(ts, data);
+                                  rtmpClient.sendVideo(vs, data);
                                 } else if (tmp == 0x12) {
                                 }
                                 flv.skipBytes(tagDataSize);
-                                Thread.sleep(40);
-                                ts += 40;
+                                Thread.sleep(RandomUtils.nextInt(25, 40));
+                                vs += 40;
                               }
                             } finally {
                               ReferenceCountUtil.safeRelease(flv);

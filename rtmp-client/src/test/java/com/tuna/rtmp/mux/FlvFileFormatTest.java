@@ -20,6 +20,7 @@ public class FlvFileFormatTest {
     } finally {
       ReferenceCountUtil.safeRelease(byteBuf);
     }
+    System.out.println(Double.longBitsToDouble(0x403E0000_00000000L));
   }
 
   public static void parseHeader(ByteBuf flv) {

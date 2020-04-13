@@ -125,8 +125,8 @@ public class RtmpClientImpl implements RtmpClient {
       RtmpMessage rtmpMessage = (RtmpMessage) msg;
       switch (rtmpMessage.getTypeId()) {
         case MSG_TYPE_CHUNK_SIZE:
-//          this.chunkSize = rtmpMessage.getPayload().readInt();
-//          socket.writeMessage(MessageBuilder.createSetChunkSize(chunkSize));
+          this.chunkSize = rtmpMessage.getPayload().readInt();
+          socket.writeMessage(MessageBuilder.createSetChunkSize(chunkSize));
           break;
         case MSG_TYPE_ABORT:
           break;
