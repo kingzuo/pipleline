@@ -47,6 +47,7 @@ public class H264RawFileTest {
 
                             ByteBuf h264 = ByteBufAllocator.DEFAULT.buffer(buf.length);
                             h264.writeBytes(buf);
+                            h264.markReaderIndex();
 
                             int pts = 0, dts = 0;
                             int count = 0;
@@ -71,6 +72,10 @@ public class H264RawFileTest {
                               if (count++ == 9) {
                                 Thread.sleep((long) (1000 * count / 25.0D));
                                 count = 0;
+                              }
+                              if (idx1 == -1) {
+                                h264.resetReaderIndex();
+                                idx1 = ByteBufUtil.indexOf(split, h264);
                               }
                             }
                           } catch (Exception e) {
