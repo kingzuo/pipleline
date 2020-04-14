@@ -105,4 +105,11 @@ public class ProtocolUtils implements Constants {
       throw new RuntimeException("readAmfNull err:" + ByteBufUtil.hexDump(byteBuf));
     }
   }
+
+  public static void readAmfEnd(ByteBuf byteBuf) {
+    int type = byteBuf.readUnsignedMedium();
+    if (type != AMF_TYPE_END) {
+      throw new RuntimeException("readAmfEnd err:" + ByteBufUtil.hexDump(byteBuf));
+    }
+  }
 }

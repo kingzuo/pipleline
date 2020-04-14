@@ -5,10 +5,48 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.Vertx;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomUtils;
 
 public class ClientTest {
+
+  public static class Frame {
+    private ByteBuf data;
+    private int timestamp;
+    private int type;
+
+    public Frame(ByteBuf data, int timestamp, int type) {
+      this.data = data;
+      this.timestamp = timestamp;
+      this.type = type;
+    }
+
+    public ByteBuf getData() {
+      return data;
+    }
+
+    public void setData(ByteBuf data) {
+      this.data = data;
+    }
+
+    public int getTimestamp() {
+      return timestamp;
+    }
+
+    public void setTimestamp(int timestamp) {
+      this.timestamp = timestamp;
+    }
+
+    public int getType() {
+      return type;
+    }
+
+    public void setType(int type) {
+      this.type = type;
+    }
+  }
 
   public static void main(String[] args) {
     Vertx vertx = Vertx.vertx();
@@ -25,7 +63,7 @@ public class ClientTest {
     context.setVidioCodecs(128);
     context.setVidioFunction(1);
     context.setTcUrl("rtmp://192.168.1.106:1935/live");
-    context.setLogActivity(true);
+    context.setLogActivity(false);
 
     RtmpClient rtmpClient = RtmpClient.create(vertx, context);
     rtmpClient.handshake(v -> {
@@ -40,12 +78,14 @@ public class ClientTest {
                       if (p.succeeded()) {
                         vertx.executeBlocking(future -> {
                           try {
-                            byte[] flvBuf = FileUtils.readFileToByteArray(new File("F:\\2020-04-12_23-18-12.flv"));
+                            byte[] flvBuf = FileUtils.readFileToByteArray(new File("F:\\2020-04-14_09-43-04.flv"));
                             ByteBuf flv = ByteBufAllocator.DEFAULT.buffer(flvBuf.length);
                             flv.writeBytes(flvBuf);
                             try {
-                              int vs = 0;
+                              List<Frame> list = new ArrayList<>();
+
                               flv.skipBytes(9);
+
                               while (flv.readableBytes() > 3) {
                                 System.out.print("PreviousTagSize:" + flv.readUnsignedInt());
                                 if (flv.readableBytes() < 1) {
@@ -69,14 +109,26 @@ public class ClientTest {
                                 System.out.println(" StreamId:" + flv.readUnsignedMedium());
                                 ByteBuf data = flv.slice(flv.readerIndex(), tagDataSize);
                                 if (tmp == 0x08) { // 音频
-                                  rtmpClient.sendAudeo(vs, data);
+                                  list.add(new Frame(data, timestamp, 0));
+//                                  as += 1000/44100d;
                                 } else if (tmp == 0x09) { // 视频
-                                  rtmpClient.sendVideo(vs, data);
+                                  list.add(new Frame(data, timestamp, 1));
+//                                  vs += 1000/30d;
                                 } else if (tmp == 0x12) {
                                 }
                                 flv.skipBytes(tagDataSize);
-                                Thread.sleep(RandomUtils.nextInt(25, 40));
-                                vs += 40;
+                                if (list.size() > 2) {
+                                  Frame send = list.remove(0);
+                                  if (send.getType() == 0) {
+                                    rtmpClient.sendAudeo(send.getTimestamp(), send.getData());
+                                  } else {
+                                    rtmpClient.sendVideo(send.getTimestamp(), send.getData());
+                                  }
+                                  long dt = list.get(0).getTimestamp() - send.getTimestamp();
+                                  if (dt > 0) {
+                                    Thread.sleep(dt);
+                                  }
+                                }
                               }
                             } finally {
                               ReferenceCountUtil.safeRelease(flv);
