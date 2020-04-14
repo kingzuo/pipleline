@@ -139,6 +139,16 @@ public class MessageBuilder implements Constants {
     return message;
   }
 
+  public static RtmpMessage createVideo(int timestamp, RtmpContext context) {
+    RtmpMessage message = RtmpMessage.create();
+    message.setFm(0);
+    message.setChunkStreamId(9);
+    message.setTimestamp(timestamp);
+    message.setTypeId(MSG_TYPE_VIDEO);
+    message.setStreamId(context.getStreamId());
+    return message;
+  }
+
   public static RtmpMessage createAudeo(int timestamp, ByteBuf audeo, RtmpContext context) {
     RtmpMessage message = RtmpMessage.create();
     message.setFm(0);
@@ -147,6 +157,16 @@ public class MessageBuilder implements Constants {
     message.setTypeId(MSG_TYPE_AUDIO);
     message.setStreamId(context.getStreamId());
     message.getPayload().writeBytes(audeo);
+    return message;
+  }
+
+  public static RtmpMessage createAudeo(int timestamp, RtmpContext context) {
+    RtmpMessage message = RtmpMessage.create();
+    message.setFm(0);
+    message.setChunkStreamId(8);
+    message.setTimestamp(timestamp);
+    message.setTypeId(MSG_TYPE_AUDIO);
+    message.setStreamId(context.getStreamId());
     return message;
   }
 }

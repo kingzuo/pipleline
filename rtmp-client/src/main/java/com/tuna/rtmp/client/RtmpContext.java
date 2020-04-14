@@ -1,5 +1,9 @@
 package com.tuna.rtmp.client;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.UnpooledByteBufAllocator;
+
 public class RtmpContext {
 
   private String host;
@@ -25,8 +29,8 @@ public class RtmpContext {
   private long capabilities;
 
   // about SPS, @see: 7.3.2.1.1, ISO_IEC_14496-10-AVC-2012.pdf, page 62
-  private String h264Sps;
-  private String h264Pps;
+  private ByteBuf h264Sps = UnpooledByteBufAllocator.DEFAULT.buffer();
+  private ByteBuf h264Pps = UnpooledByteBufAllocator.DEFAULT.buffer();
   // whether the sps and pps sent,
   // @see https://github.com/ossrs/srs/issues/203
   private boolean h264SpsPpsSent;
@@ -149,19 +153,19 @@ public class RtmpContext {
     this.capabilities = capabilities;
   }
 
-  public String getH264Sps() {
+  public ByteBuf getH264Sps() {
     return h264Sps;
   }
 
-  public void setH264Sps(String h264Sps) {
+  public void setH264Sps(ByteBuf h264Sps) {
     this.h264Sps = h264Sps;
   }
 
-  public String getH264Pps() {
+  public ByteBuf getH264Pps() {
     return h264Pps;
   }
 
-  public void setH264Pps(String h264Pps) {
+  public void setH264Pps(ByteBuf h264Pps) {
     this.h264Pps = h264Pps;
   }
 

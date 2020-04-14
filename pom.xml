@@ -10,6 +10,7 @@
   <version>1.0.0</version>
   <modules>
     <module>rtmp-client</module>
+    <module>jtt1078</module>
   </modules>
 
   <properties>

@@ -20,6 +20,7 @@ import static com.tuna.rtmp.api.Constants.MSG_TYPE_UNDEFINED;
 import static com.tuna.rtmp.api.Constants.MSG_TYPE_USER;
 import static com.tuna.rtmp.api.Constants.MSG_TYPE_VIDEO;
 
+import com.tuna.rtmp.api.H264Utils;
 import com.tuna.rtmp.api.MessageBuilder;
 import com.tuna.rtmp.api.ProtocolUtils;
 import com.tuna.rtmp.api.RtmpMessage;
@@ -42,8 +43,12 @@ import io.vertx.core.net.NetSocket;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class RtmpClientImpl implements RtmpClient {
+
+  private static final Logger logger = LoggerFactory.getLogger(RtmpClient.class);
 
   private Vertx vertx;
 
@@ -234,23 +239,135 @@ public class RtmpClientImpl implements RtmpClient {
   }
 
   @Override
-  public void sendVideo(int timestamp, ByteBuf payload, Handler<AsyncResult<Void>> handler) {
-    socket.writeMessage(MessageBuilder.createVideo(timestamp, payload, context), handler);
+  public void sendFlvVideo(int pts, ByteBuf payload, Handler<AsyncResult<Void>> handler) {
+    socket.writeMessage(MessageBuilder.createVideo(pts, payload, context), handler);
   }
 
   @Override
-  public void sendAudeo(int timestamp, ByteBuf payload, Handler<AsyncResult<Void>> handler) {
-    socket.writeMessage(MessageBuilder.createAudeo(timestamp, payload, context), handler);
+  public void sendFlvAudeo(int pts, ByteBuf payload, Handler<AsyncResult<Void>> handler) {
+    socket.writeMessage(MessageBuilder.createAudeo(pts, payload, context), handler);
   }
 
   @Override
-  public void sendVideo(int timestamp, ByteBuf payload) {
-    socket.writeMessage(MessageBuilder.createVideo(timestamp, payload, context));
+  public void sendFlvVideo(int pts, ByteBuf payload) {
+    socket.writeMessage(MessageBuilder.createVideo(pts, payload, context));
   }
 
   @Override
-  public void sendAudeo(int timestamp, ByteBuf payload) {
-    socket.writeMessage(MessageBuilder.createAudeo(timestamp, payload, context));
+  public void sendFlvAudeo(int pts, ByteBuf payload) {
+    socket.writeMessage(MessageBuilder.createAudeo(pts, payload, context));
+  }
+
+  @Override
+  public void sendH264Video(int pts, int dts, ByteBuf payload, RtmpContext context) {
+    int nalType = payload.getByte(payload.readerIndex()) & 0x1F;
+    if (H264Utils.isPPS(nalType)) {
+      context.getH264Pps().clear();
+      context.getH264Pps().writeBytes(payload);
+      context.setH264PpsChanged(true);
+      return;
+    }
+    if (H264Utils.isSPS(nalType)) {
+      context.getH264Sps().clear();
+      context.getH264Sps().writeBytes(payload);
+      context.setH264SpsChanged(true);
+      return;
+    }
+
+    if (H264Utils.isIgnore(nalType)) {
+      logger.info("the video data is ignored, nalType:{}", nalType);
+      return;
+    }
+
+    if (context.isH264PpsChanged() || context.isH264SpsChanged()) {
+      if (context.getH264Pps().readableBytes() < 1 || context.getH264Sps().readableBytes() < 1) {
+        // SPS or PPS missing
+        return;
+      }
+      RtmpMessage message = MessageBuilder.createVideo(pts, context);
+      /**
+       * FrameType and codecId
+       *
+       * <p>FrameType UB[4] 1:keyframe 2:inter frame 3:disposable inter frame 4:generated keyframe 5: video info/command frame</p>
+       * <p>CodecId   UB[4] 1: JPEG 2: Sorenson H.263 3: Screen Video 4: No2 VP6 5: On2 VP6 with alpha channel 6: Screen video version 2 7: AVC</p>
+       */
+      message.getPayload().writeByte(0x17);
+      /**
+       * AVCPacketType
+       *
+       * 0: AVC sequence header 1: AVC NALU 2:AVC end of sequence.
+       */
+      message.getPayload().writeByte(0);
+      // Composition time offset
+      message.getPayload().writeMedium(0);
+
+      // configurationVersion
+      message.getPayload().writeByte(1);
+      // AVCProfileIndication
+      message.getPayload().writeByte(context.getH264Sps().getByte(context.getH264Sps().readerIndex() + 1));
+      // profile_compatibility
+      message.getPayload().writeByte(0);
+      // AVCLevelIndication
+      message.getPayload().writeByte(context.getH264Sps().getByte(context.getH264Sps().readerIndex() + 3));
+      // lengthSizeMinusOne, or NAL_unit_length, always use 4bytes size,
+      // so we always set it to 0x03.
+      message.getPayload().writeByte(3);
+
+      // SPS
+      // numOfSequenceParameterSets, always 1
+      message.getPayload().writeByte(1);
+      // sequenceParameterSetLength
+      message.getPayload().writeShort(context.getH264Sps().readableBytes());
+      // sequenceParameterSetNALUnit
+      message.getPayload().writeBytes(context.getH264Sps());
+
+      // PPS
+      // numOfSequenceParameterSets, always 1
+      message.getPayload().writeByte(1);
+      // sequenceParameterSetLength
+      message.getPayload().writeShort(context.getH264Pps().readableBytes());
+      // sequenceParameterSetNALUnit
+      message.getPayload().writeBytes(context.getH264Pps());
+      socket.writeMessage(message);
+
+      context.setH264PpsChanged(false);
+      context.setH264SpsChanged(false);
+      context.setH264SpsPpsSent(true);
+    }
+
+    if (context.isH264SpsPpsSent()) {
+      RtmpMessage message = MessageBuilder.createVideo(pts, context);
+      /**
+       * FrameType and codecId
+       *
+       * <p>FrameType UB[4] 1:keyframe 2:inter frame 3:disposable inter frame 4:generated keyframe 5: video info/command frame</p>
+       * <p>CodecId   UB[4] 1: JPEG 2: Sorenson H.263 3: Screen Video 4: No2 VP6 5: On2 VP6 with alpha channel 6: Screen video version 2 7: AVC</p>
+       */
+      if (H264Utils.isKeyFrame(nalType)) {
+        message.getPayload().writeByte(0x17);
+      } else {
+        message.getPayload().writeByte(0x27);
+      }
+      /**
+       * AVCPacketType
+       *
+       * 0: AVC sequence header 1: AVC NALU 2:AVC end of sequence.
+       */
+      message.getPayload().writeByte(1);
+      // Composition time offset
+      message.getPayload().writeMedium(pts - dts);
+
+      // NALUnitLength: 4bytes size of nalu:
+      message.getPayload().writeInt(payload.readableBytes());
+      // NALUnit Nbytes of nalu.
+      message.getPayload().writeBytes(payload);
+      socket.writeMessage(message);
+    }
+  }
+
+  @Override
+  public void sendH264Audeo(int pts, int dts, ByteBuf payload, RtmpContext context) {
+
   }
 
   @Override

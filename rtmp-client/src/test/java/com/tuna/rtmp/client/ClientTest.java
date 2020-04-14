@@ -8,7 +8,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.RandomUtils;
 
 public class ClientTest {
 
@@ -120,9 +119,9 @@ public class ClientTest {
                                 if (list.size() > 2) {
                                   Frame send = list.remove(0);
                                   if (send.getType() == 0) {
-                                    rtmpClient.sendAudeo(send.getTimestamp(), send.getData());
+                                    rtmpClient.sendFlvAudeo(send.getTimestamp(), send.getData());
                                   } else {
-                                    rtmpClient.sendVideo(send.getTimestamp(), send.getData());
+                                    rtmpClient.sendFlvVideo(send.getTimestamp(), send.getData());
                                   }
                                   long dt = list.get(0).getTimestamp() - send.getTimestamp();
                                   if (dt > 0) {

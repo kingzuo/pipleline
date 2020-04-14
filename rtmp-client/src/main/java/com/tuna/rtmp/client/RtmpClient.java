@@ -21,13 +21,17 @@ public interface RtmpClient {
 
   void publish(Handler<AsyncResult<Void>> handler);
 
-  void sendVideo(int timestamp, ByteBuf payload, Handler<AsyncResult<Void>> handler);
+  void sendFlvVideo(int pts, ByteBuf payload, Handler<AsyncResult<Void>> handler);
 
-  void sendAudeo(int timestamp, ByteBuf payload, Handler<AsyncResult<Void>> handler);
+  void sendFlvAudeo(int pts, ByteBuf payload, Handler<AsyncResult<Void>> handler);
 
-  void sendVideo(int timestamp, ByteBuf payload);
+  void sendFlvVideo(int pts, ByteBuf payload);
 
-  void sendAudeo(int timestamp, ByteBuf payload);
+  void sendFlvAudeo(int pts, ByteBuf payload);
+
+  void sendH264Video(int pts, int dts, ByteBuf payload, RtmpContext context);
+
+  void sendH264Audeo(int pts, int dts, ByteBuf payload, RtmpContext context);
 
   void close(Handler<AsyncResult<Void>> handler);
 
