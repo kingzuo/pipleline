@@ -20,9 +20,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class SocketConnectionHandlerImpl implements Handler<NetSocket> {
+public class ConnectionHandler implements Handler<NetSocket> {
 
-  private static final Logger logger = LoggerFactory.getLogger(SocketConnectionHandlerImpl.class);
+  private static final Logger logger = LoggerFactory.getLogger(ConnectionHandler.class);
 
   /**
    * Reference to the context of the verticle
@@ -31,7 +31,7 @@ public class SocketConnectionHandlerImpl implements Handler<NetSocket> {
 
   private Map<String, ProxyContext> sessionMap = new ConcurrentHashMap<>();
 
-  public SocketConnectionHandlerImpl(Context context) {
+  public ConnectionHandler(Context context) {
     this.context = context;
   }
 
@@ -117,7 +117,6 @@ public class SocketConnectionHandlerImpl implements Handler<NetSocket> {
         context.getRecvQueue().writeBytes(message.getPayload());
       } else if (message.getPackType() == 2) { // 最后一包
         context.getRecvQueue().writeBytes(message.getPayload());
-        // 原子包，直接转发
         sendViedioData(message.getPts(), message.getDts(), context.getRecvQueue(), context);
         context.getRecvQueue().clear();
       }
@@ -138,6 +137,8 @@ public class SocketConnectionHandlerImpl implements Handler<NetSocket> {
         nalu = h264.slice();
       }
       context.getRtmpClient().sendH264Video(context.getPts(), dts, nalu, context.getRtmpContext());
+      h264.skipBytes(nalu.readableBytes());
+      idx1 = ByteBufUtil.indexOf(JTT1078Constants.SPLITER, h264);
     }
   }
 

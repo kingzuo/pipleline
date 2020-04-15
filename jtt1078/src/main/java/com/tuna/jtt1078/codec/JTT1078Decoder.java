@@ -26,12 +26,12 @@ public class JTT1078Decoder extends ByteToMessageDecoder {
       return;
     }
 
-    int idx = ByteBufUtil.indexOf(FIX_HEADER, in);
-    if (idx == -1) {
-      in.skipBytes(in.readableBytes());
-    } else {
-      in.readerIndex(idx);
-    }
+//    int idx = ByteBufUtil.indexOf(FIX_HEADER, in);
+//    if (idx == -1) {
+//      in.skipBytes(in.readableBytes());
+//    } else {
+//      in.readerIndex(idx);
+//    }
 
     int headerSize = 30;
 
@@ -70,6 +70,7 @@ public class JTT1078Decoder extends ByteToMessageDecoder {
       message.setDts(in.readUnsignedShort());
     }
     in.skipBytes(2);
+
     message.getPayload().writeBytes(in, in.readerIndex(), pcktSize);
     in.skipBytes(pcktSize);
     out.add(message);

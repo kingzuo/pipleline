@@ -20,7 +20,7 @@ public class JTT1078Server extends AbstractVerticle {
 
     netServer = getVertx().createNetServer(options);
 
-    netServer.connectHandler(new SocketConnectionHandlerImpl(context));
+    netServer.connectHandler(new ConnectionHandler(context));
 
     netServer.listen(result -> {
       if (result.succeeded()) {
