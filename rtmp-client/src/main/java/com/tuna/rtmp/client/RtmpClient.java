@@ -11,15 +11,17 @@ public interface RtmpClient {
     return new RtmpClientImpl(vertx, context);
   }
 
-  void handshake(Handler<AsyncResult<Void>> handler);
+  void handshake(Handler<AsyncResult<RtmpClient>> handler);
 
-  void connect(Handler<AsyncResult<Void>> handler);
+  void connect(Handler<AsyncResult<RtmpClient>> handler);
 
-  void createStream(Handler<AsyncResult<Void>> handler);
+  void createStream(Handler<AsyncResult<RtmpClient>> handler);
 
-  void fcPublish(Handler<AsyncResult<Void>> handler);
+  void fcPublish(Handler<AsyncResult<RtmpClient>> handler);
 
-  void publish(Handler<AsyncResult<Void>> handler);
+  void publish(Handler<AsyncResult<RtmpClient>> handler);
+
+  void doAllPublishSteps(Handler<AsyncResult<RtmpClient>> handler);
 
   void sendFlvVideo(int pts, ByteBuf payload, Handler<AsyncResult<Void>> handler);
 

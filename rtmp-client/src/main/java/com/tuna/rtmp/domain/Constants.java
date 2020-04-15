@@ -1,4 +1,4 @@
-package com.tuna.rtmp.api;
+package com.tuna.rtmp.domain;
 
 public interface Constants {
 

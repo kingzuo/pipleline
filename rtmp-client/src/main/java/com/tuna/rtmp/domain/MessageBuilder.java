@@ -1,4 +1,4 @@
-package com.tuna.rtmp.api;
+package com.tuna.rtmp.domain;
 
 import com.tuna.rtmp.client.RtmpContext;
 import io.netty.buffer.ByteBuf;

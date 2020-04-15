@@ -1,29 +1,29 @@
 package com.tuna.rtmp.client;
 
-import static com.tuna.rtmp.api.Constants.AMF_CMD_CREATE_STREAM;
-import static com.tuna.rtmp.api.Constants.C1C2_LENGTH;
-import static com.tuna.rtmp.api.Constants.DEFAULT_CHUNK_SIZE;
-import static com.tuna.rtmp.api.Constants.MSG_TYPE_ABORT;
-import static com.tuna.rtmp.api.Constants.MSG_TYPE_ACK;
-import static com.tuna.rtmp.api.Constants.MSG_TYPE_ACK_SIZE;
-import static com.tuna.rtmp.api.Constants.MSG_TYPE_AMF3_CMD;
-import static com.tuna.rtmp.api.Constants.MSG_TYPE_AMF3_META;
-import static com.tuna.rtmp.api.Constants.MSG_TYPE_AMF3_SHARED;
-import static com.tuna.rtmp.api.Constants.MSG_TYPE_AMF_CMD;
-import static com.tuna.rtmp.api.Constants.MSG_TYPE_AMF_META;
-import static com.tuna.rtmp.api.Constants.MSG_TYPE_AMF_SHARED;
-import static com.tuna.rtmp.api.Constants.MSG_TYPE_AUDIO;
-import static com.tuna.rtmp.api.Constants.MSG_TYPE_BANDWIDTH;
-import static com.tuna.rtmp.api.Constants.MSG_TYPE_CHUNK_SIZE;
-import static com.tuna.rtmp.api.Constants.MSG_TYPE_EDGE;
-import static com.tuna.rtmp.api.Constants.MSG_TYPE_UNDEFINED;
-import static com.tuna.rtmp.api.Constants.MSG_TYPE_USER;
-import static com.tuna.rtmp.api.Constants.MSG_TYPE_VIDEO;
+import static com.tuna.rtmp.domain.Constants.AMF_CMD_CREATE_STREAM;
+import static com.tuna.rtmp.domain.Constants.C1C2_LENGTH;
+import static com.tuna.rtmp.domain.Constants.DEFAULT_CHUNK_SIZE;
+import static com.tuna.rtmp.domain.Constants.MSG_TYPE_ABORT;
+import static com.tuna.rtmp.domain.Constants.MSG_TYPE_ACK;
+import static com.tuna.rtmp.domain.Constants.MSG_TYPE_ACK_SIZE;
+import static com.tuna.rtmp.domain.Constants.MSG_TYPE_AMF3_CMD;
+import static com.tuna.rtmp.domain.Constants.MSG_TYPE_AMF3_META;
+import static com.tuna.rtmp.domain.Constants.MSG_TYPE_AMF3_SHARED;
+import static com.tuna.rtmp.domain.Constants.MSG_TYPE_AMF_CMD;
+import static com.tuna.rtmp.domain.Constants.MSG_TYPE_AMF_META;
+import static com.tuna.rtmp.domain.Constants.MSG_TYPE_AMF_SHARED;
+import static com.tuna.rtmp.domain.Constants.MSG_TYPE_AUDIO;
+import static com.tuna.rtmp.domain.Constants.MSG_TYPE_BANDWIDTH;
+import static com.tuna.rtmp.domain.Constants.MSG_TYPE_CHUNK_SIZE;
+import static com.tuna.rtmp.domain.Constants.MSG_TYPE_EDGE;
+import static com.tuna.rtmp.domain.Constants.MSG_TYPE_UNDEFINED;
+import static com.tuna.rtmp.domain.Constants.MSG_TYPE_USER;
+import static com.tuna.rtmp.domain.Constants.MSG_TYPE_VIDEO;
 
-import com.tuna.rtmp.api.H264Utils;
-import com.tuna.rtmp.api.MessageBuilder;
-import com.tuna.rtmp.api.ProtocolUtils;
-import com.tuna.rtmp.api.RtmpMessage;
+import com.tuna.rtmp.domain.H264Utils;
+import com.tuna.rtmp.domain.MessageBuilder;
+import com.tuna.rtmp.domain.ProtocolUtils;
+import com.tuna.rtmp.domain.RtmpMessage;
 import com.tuna.rtmp.codec.RtmpDecoder;
 import com.tuna.rtmp.codec.RtmpEncoder;
 import io.netty.buffer.ByteBuf;
@@ -61,7 +61,7 @@ public class RtmpClientImpl implements RtmpClient {
   private int chunkSize = DEFAULT_CHUNK_SIZE;
   private int ackWindowSize = 500000;
 
-  private Map<Long, Handler<AsyncResult<Void>>> callBackHandler = new ConcurrentHashMap();
+  private Map<Long, Handler<AsyncResult<RtmpClient>>> callBackHandler = new ConcurrentHashMap();
   private Map<Long, String> callBackHandlerType = new ConcurrentHashMap();
 
   public RtmpClientImpl(Vertx vertx, RtmpContext context) {
@@ -70,7 +70,7 @@ public class RtmpClientImpl implements RtmpClient {
   }
 
   @Override
-  public void handshake(Handler<AsyncResult<Void>> handler) {
+  public void handshake(Handler<AsyncResult<RtmpClient>> handler) {
     NetClientOptions options = new NetClientOptions().setConnectTimeout(6000);
     options.setReconnectAttempts(3).setReconnectInterval(1000);
     options.setLogActivity(context.isLogActivity());
@@ -117,8 +117,10 @@ public class RtmpClientImpl implements RtmpClient {
           socket.channelHandlerContext().pipeline()
               .addBefore("handler", "rtmpDecoder", new RtmpDecoder(RtmpClientImpl.this));
           socket.messageHandler(this::rtmpMessageHandler);
+          handler.handle(Future.succeededFuture(RtmpClientImpl.this));
+        } else {
+          handler.handle(Future.failedFuture(v.cause()));
         }
-        handler.handle(v);
       } catch (Exception e) {
         handler.handle(Future.failedFuture(e));
       }
@@ -175,7 +177,7 @@ public class RtmpClientImpl implements RtmpClient {
     ProtocolUtils.readAmfString(rtmpMessage.getPayload());
     long tsId = ProtocolUtils.readAmfNumber(rtmpMessage.getPayload());
     if (callBackHandler.containsKey(tsId)) {
-      callBackHandler.get(tsId).handle(Future.succeededFuture());
+      callBackHandler.get(tsId).handle(Future.succeededFuture(RtmpClientImpl.this));
       callBackHandler.remove(tsId);
     }
 
@@ -191,7 +193,7 @@ public class RtmpClientImpl implements RtmpClient {
   }
 
   @Override
-  public void connect(Handler<AsyncResult<Void>> handler) {
+  public void connect(Handler<AsyncResult<RtmpClient>> handler) {
     long id = transId.getAndIncrement();
     callBackHandler.put(id, handler);
     socket.writeMessage(MessageBuilder.createConnect(id, context));
@@ -212,7 +214,7 @@ public class RtmpClientImpl implements RtmpClient {
   }
 
   @Override
-  public void createStream(Handler<AsyncResult<Void>> handler) {
+  public void createStream(Handler<AsyncResult<RtmpClient>> handler) {
     long id = transId.getAndIncrement();
     callBackHandler.put(id, handler);
     callBackHandlerType.put(id, AMF_CMD_CREATE_STREAM);
@@ -227,15 +229,50 @@ public class RtmpClientImpl implements RtmpClient {
   }
 
   @Override
-  public void fcPublish(Handler<AsyncResult<Void>> handler) {
+  public void fcPublish(Handler<AsyncResult<RtmpClient>> handler) {
     long id = transId.getAndIncrement();
-    socket.writeMessage(MessageBuilder.createFCPublish(id, context), handler);
+    socket.writeMessage(MessageBuilder.createFCPublish(id, context), v -> {
+      if (v.succeeded()) {
+        handler.handle(Future.succeededFuture(RtmpClientImpl.this));
+      } else {
+        handler.handle(Future.failedFuture(v.cause()));
+      }
+    });
   }
 
   @Override
-  public void publish(Handler<AsyncResult<Void>> handler) {
+  public void publish(Handler<AsyncResult<RtmpClient>> handler) {
     long id = transId.getAndIncrement();
-    socket.writeMessage(MessageBuilder.createPublish(id, context), handler);
+    socket.writeMessage(MessageBuilder.createPublish(id, context), v -> {
+      if (v.succeeded()) {
+        handler.handle(Future.succeededFuture(RtmpClientImpl.this));
+      } else {
+        handler.handle(Future.failedFuture(v.cause()));
+      }
+    });
+  }
+
+  @Override
+  public void doAllPublishSteps(Handler<AsyncResult<RtmpClient>> handler) {
+    Promise<RtmpClient> handShakePromise = Promise.promise();
+    handshake(handShakePromise);
+    handShakePromise.future().compose(client -> {
+      Promise<RtmpClient> connectPromise = Promise.promise();
+      client.connect(connectPromise);
+      return connectPromise.future();
+    }).compose(client -> {
+      Promise<RtmpClient> createStream = Promise.promise();
+      client.createStream(createStream);
+      return createStream.future();
+    }).compose(client -> {
+      Promise<RtmpClient> fcPublish = Promise.promise();
+      client.fcPublish(fcPublish);
+      return fcPublish.future();
+    }).compose(client -> {
+      Promise<RtmpClient> publish = Promise.promise();
+      client.publish(publish);
+      return publish.future();
+    }).setHandler(handler);
   }
 
   @Override
@@ -379,7 +416,6 @@ public class RtmpClientImpl implements RtmpClient {
   public void close() {
     socket.close();
     netClient.close();
-    vertx.close();
   }
 
   public int getChunkSize() {

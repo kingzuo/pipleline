@@ -1,7 +1,6 @@
 package com.tuna.rtmp.codec;
 
-import com.tuna.rtmp.api.Constants;
-import com.tuna.rtmp.api.RtmpMessage;
+import com.tuna.rtmp.domain.RtmpMessage;
 import com.tuna.rtmp.client.RtmpClientImpl;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;

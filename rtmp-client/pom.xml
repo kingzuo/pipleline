@@ -9,7 +9,7 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>rtmp</artifactId>
+  <artifactId>rtmp-client</artifactId>
   <packaging>jar</packaging>
   <name>rtmp-client</name>
 
