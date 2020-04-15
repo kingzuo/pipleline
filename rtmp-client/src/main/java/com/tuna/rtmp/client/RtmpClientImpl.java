@@ -403,13 +403,11 @@ public class RtmpClientImpl implements RtmpClient {
   }
 
   @Override
-  public void sendH264Audeo(int pts, int dts, ByteBuf payload, RtmpContext context) {
-
-  }
-
-  @Override
   public void close(Handler<AsyncResult<Void>> handler) {
-
+    socket.close( v -> {
+      netClient.close();
+      handler.handle(v);
+    });
   }
 
   @Override

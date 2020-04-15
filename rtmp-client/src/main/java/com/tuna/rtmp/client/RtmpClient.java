@@ -33,8 +33,6 @@ public interface RtmpClient {
 
   void sendH264Video(int pts, int dts, ByteBuf payload, RtmpContext context);
 
-  void sendH264Audeo(int pts, int dts, ByteBuf payload, RtmpContext context);
-
   void close(Handler<AsyncResult<Void>> handler);
 
   void close();

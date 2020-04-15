@@ -4,7 +4,7 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 
-public class Test {
+public class JTT1078Test {
 
   public static void main(String[] args) {
     Vertx vertx = Vertx.vertx();

@@ -70,43 +70,14 @@ public class ConnectionHandler implements Handler<NetSocket> {
     });
 
     socketInternal.closeHandler(v -> {
-      logger.info("Session closed sessionId:{}", sessionMap.get(socketInternal.remoteAddress().toString()).getRtmpContext().getName());
+      logger.info("Session closed sessionId:{}",
+          sessionMap.get(socketInternal.remoteAddress().toString()).getRtmpContext().getName());
       sessionMap.get(socketInternal.remoteAddress().toString()).recycle();
       sessionMap.remove(socketInternal.remoteAddress().toString());
     });
   }
 
-  private String getSplitType(int value) {
-    switch (value) {
-      case 0:
-        return "原子包";
-      case 1:
-        return "第一包";
-      case 2:
-        return "最后包";
-      case 3:
-        return "中间包";
-    }
-    return null;
-  }
-
-  private void debug(JTT1078Message message) {
-    if (message.getFrameType() == 0) {
-      logger.info("序号:{} I PTS:{} DTS:{} {}:{} ", message.getSequenceNo(), message.getPts(), message.getDts(), getSplitType(message.getPackType()), ByteBufUtil.hexDump(message.getPayload()));
-    } else if (message.getFrameType() == 1) {
-      logger.info("序号:{} P PTS:{} DTS:{} {}:{} ", message.getSequenceNo(), message.getPts(), message.getDts(), getSplitType(message.getPackType()), ByteBufUtil.hexDump(message.getPayload()));
-    } else if (message.getFrameType() == 2) {
-      logger.info("序号:{} B PTS:{} DTS:{} {}:{} ", message.getSequenceNo(), message.getPts(), message.getDts(), getSplitType(message.getPackType()), ByteBufUtil.hexDump(message.getPayload()));
-    } else if (message.getFrameType() == 3) {
-//      logger.info("序号:{} A PTS:{} DTS:{} {}:{} ", message.getSequenceNo(), message.getPts(), message.getDts(), getSplitType(message.getPackType()), ByteBufUtil.hexDump(message.getPayload()));
-    } else if (message.getFrameType() == 3) {
-//      logger.info("序号:{} D PTS:{} DTS:{} {}:{} ", message.getSequenceNo(), message.getPts(), message.getDts(), getSplitType(message.getPackType()), ByteBufUtil.hexDump(message.getPayload()));
-    }
-  }
-
   protected void doProxyRtmp(ProxyContext context, JTT1078Message message) {
-//    debug(message);
-
     if (message.getFrameType() < 3) {
       if (message.getPackType() == 0) {
         // 原子包，直接转发
@@ -152,7 +123,8 @@ public class ConnectionHandler implements Handler<NetSocket> {
     private int pts = 0;
     private int prePts = 0;
 
-    public static ProxyContext create(NetSocket socket, Context context, long simNo, Handler<AsyncResult<ProxyContext>> handler) {
+    public static ProxyContext create(NetSocket socket, Context context, long simNo,
+        Handler<AsyncResult<ProxyContext>> handler) {
       ProxyContext proxyContext = new ProxyContext();
       proxyContext.setSocketInternal((NetSocketInternal) socket);
       proxyContext.setRtmpContext(createRtmpContext(context, simNo));
@@ -214,7 +186,7 @@ public class ConnectionHandler implements Handler<NetSocket> {
       if (pts - prePts > 0) {
         this.pts += pts - prePts;
       } else {
-        this.pts += 40;
+        this.pts += 1000 / 30;
       }
       this.prePts = pts;
     }
@@ -240,7 +212,8 @@ public class ConnectionHandler implements Handler<NetSocket> {
     rtmpContext.setAudioCodecs(1024);
     rtmpContext.setVidioCodecs(128);
     rtmpContext.setVidioFunction(1);
-    rtmpContext.setTcUrl(String.format("rtmp://%s:%d/live", context.config().getString("rtmpHost"), context.config().getInteger("rtmpPort")));
+    rtmpContext.setTcUrl(String
+        .format("rtmp://%s:%d/live", context.config().getString("rtmpHost"), context.config().getInteger("rtmpPort")));
     rtmpContext.setLogActivity(context.config().getBoolean("logActivity", false));
     return rtmpContext;
   }
