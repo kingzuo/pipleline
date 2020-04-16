@@ -11,6 +11,7 @@
   <modules>
     <module>rtmp-client</module>
     <module>jtt1078</module>
+    <module>distribute</module>
   </modules>
 
   <properties>

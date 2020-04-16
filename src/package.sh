@@ -1,0 +1,1 @@
+jlink --module-path %JAVA_HOME%/jmods --add-modules java.instrument,java.xml,jdk.unsupported,java.logging,java.desktop,java.management,jdk.management.agent,java.sql,java.naming --compress 2 --no-man-pages --no-header-files --output target/java-run-image
