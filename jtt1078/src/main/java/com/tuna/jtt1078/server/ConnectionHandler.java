@@ -200,6 +200,13 @@ public class ConnectionHandler implements Handler<NetSocket> {
     }
   }
 
+  public void close() {
+    sessionMap.forEach((key, session) -> {
+      session.recycle();
+    });
+    sessionMap.clear();
+  }
+
   protected static RtmpContext createRtmpContext(Context context, long simNo) {
     RtmpContext rtmpContext = new RtmpContext();
     rtmpContext.setHost(context.config().getString("rtmpHost"));

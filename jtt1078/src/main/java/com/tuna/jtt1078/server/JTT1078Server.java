@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 public class JTT1078Server extends AbstractVerticle {
   private static final Logger logger = LoggerFactory.getLogger(JTT1078Server.class);
   private NetServer netServer;
+  private ConnectionHandler connectionHandler;
 
   @Override
   public void start(Promise<Void> startPromise) throws Exception {
@@ -20,7 +21,8 @@ public class JTT1078Server extends AbstractVerticle {
 
     netServer = getVertx().createNetServer(options);
 
-    netServer.connectHandler(new ConnectionHandler(context));
+    connectionHandler = new ConnectionHandler(context);
+    netServer.connectHandler(connectionHandler);
 
     netServer.listen(result -> {
       if (result.succeeded()) {
@@ -35,6 +37,7 @@ public class JTT1078Server extends AbstractVerticle {
 
   @Override
   public void stop(Promise<Void> stopPromise) throws Exception {
+    connectionHandler.close();
     netServer.close(stopPromise.future());
   }
 }
