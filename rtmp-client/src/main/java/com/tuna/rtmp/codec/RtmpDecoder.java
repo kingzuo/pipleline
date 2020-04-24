@@ -6,7 +6,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.util.ReferenceCountUtil;
-
 import java.util.List;
 
 /**
@@ -44,10 +43,11 @@ import java.util.List;
  * <p>+-----------+--------------+----------------+-------------------+</p>
  *
  * <p>fmt = 3  0 bytes</p>
- *
+ * <p>
  * Now we just decode the fmt=0 and fmt=3 split case.
  */
 public class RtmpDecoder extends ByteToMessageDecoder {
+
   private final RtmpClientImpl rtmpClient;
 
   public RtmpDecoder(RtmpClientImpl rtmpClient) {
@@ -55,7 +55,8 @@ public class RtmpDecoder extends ByteToMessageDecoder {
   }
 
   @Override
-  protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf input, List<Object> output) throws Exception {
+  protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf input, List<Object> output)
+      throws Exception {
     if (input.readableBytes() < 7) {
       return;
     }

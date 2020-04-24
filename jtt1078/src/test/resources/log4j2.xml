@@ -1,28 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="WARN" monitorInterval="1800">
-	<Properties>
-		<!-- 日志备份目录 -->
-    <Property name="SERVER_NAME">Tuna</Property>
-		<Property name="EVERY_MAX_FILE_NUM">5000</Property><!-- 日志文件最大个数 -->
-		<Property name="EVERY_FILE_SIZE">10M</Property><!-- 日志切割的最小单位 -->
-		<Property name="DATA_FILE_SIZE">100M</Property><!-- 数据日志切割的最小单位 -->
-		<Property name="OUTPUT_LOG_LEVEL">INFO</Property><!-- 日志输出级别 -->
-	</Properties>
+    <Properties>
+        <!-- 日志备份目录 -->
+        <Property name="SERVER_NAME">Tuna</Property>
+        <Property name="EVERY_MAX_FILE_NUM">5000</Property><!-- 日志文件最大个数 -->
+        <Property name="EVERY_FILE_SIZE">10M</Property><!-- 日志切割的最小单位 -->
+        <Property name="DATA_FILE_SIZE">100M</Property><!-- 数据日志切割的最小单位 -->
+        <Property name="OUTPUT_LOG_LEVEL">INFO</Property><!-- 日志输出级别 -->
+    </Properties>
 
-	<Appenders>
-		<Console name="console" target="SYSTEM_OUT">
-			<ThresholdFilter level="trace" onMatch="ACCEPT" onMismatch="DENY" />
-			<PatternLayout pattern="%d{HH:mm:ss.SSS} [%thread] %-5level [%logger{1} %C{1}.%M] - %m %ex%n" />
-		</Console>
-	</Appenders>
+    <Appenders>
+        <Console name="console" target="SYSTEM_OUT">
+            <ThresholdFilter level="trace" onMatch="ACCEPT" onMismatch="DENY"/>
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%thread] %-5level [%logger{1} %C{1}.%M] - %m %ex%n"/>
+        </Console>
+    </Appenders>
 
-	<Loggers>
-		<Logger name="org.slf4j" level="INFO" />
-		<Logger name="org.springframework" level="INFO" />
-		<Logger name="io.vertx.ext.jwt.JWT" level="WARN"/>
+    <Loggers>
+        <Logger name="org.slf4j" level="INFO"/>
+        <Logger name="org.springframework" level="INFO"/>
+        <Logger name="io.vertx.ext.jwt.JWT" level="WARN"/>
 
-		<AsyncRoot level="${OUTPUT_LOG_LEVEL}">
-			<appender-ref ref="console" />
-		</AsyncRoot>
-	</Loggers>
+        <AsyncRoot level="${OUTPUT_LOG_LEVEL}">
+            <appender-ref ref="console"/>
+        </AsyncRoot>
+    </Loggers>
 </Configuration>

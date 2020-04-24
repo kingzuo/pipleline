@@ -2,10 +2,9 @@ package com.tuna.rtmp.domain;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
+import java.nio.charset.Charset;
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.commons.lang3.StringUtils;
-
-import java.nio.charset.Charset;
 
 public class ProtocolUtils implements Constants {
 

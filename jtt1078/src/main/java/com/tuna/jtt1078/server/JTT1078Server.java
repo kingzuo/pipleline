@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class JTT1078Server extends AbstractVerticle {
+
   private static final Logger logger = LoggerFactory.getLogger(JTT1078Server.class);
   private NetServer netServer;
   private ConnectionHandler connectionHandler;

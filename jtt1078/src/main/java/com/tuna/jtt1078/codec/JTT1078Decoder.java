@@ -2,7 +2,6 @@ package com.tuna.jtt1078.codec;
 
 import com.tuna.jtt1078.domain.JTT1078Message;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;

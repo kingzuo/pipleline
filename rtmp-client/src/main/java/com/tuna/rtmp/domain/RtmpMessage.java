@@ -6,6 +6,7 @@ import io.netty.util.Recycler;
 import io.netty.util.ReferenceCountUtil;
 
 public class RtmpMessage {
+
   private final Recycler.Handle<RtmpMessage> recyclerHandle;
   private int fm;
   private int chunkStreamId;
