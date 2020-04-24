@@ -1,7 +1,6 @@
-package com.tuna.rtmp.client;
+package com.tuna.rtmp.domain;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
 
 public class RtmpContext {

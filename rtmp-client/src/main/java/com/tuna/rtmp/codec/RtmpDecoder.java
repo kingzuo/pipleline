@@ -1,11 +1,12 @@
 package com.tuna.rtmp.codec;
 
-import com.tuna.rtmp.domain.RtmpMessage;
 import com.tuna.rtmp.client.RtmpClientImpl;
+import com.tuna.rtmp.domain.RtmpMessage;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.util.ReferenceCountUtil;
+
 import java.util.List;
 
 /**
@@ -105,7 +106,6 @@ public class RtmpDecoder extends ByteToMessageDecoder {
         readSize += Math.min(rtmpClient.getChunkSize(), remain);
         if (remain > rtmpClient.getChunkSize()) {
           input.skipBytes(1);
-          readSize ++;
         }
       }
     } else {

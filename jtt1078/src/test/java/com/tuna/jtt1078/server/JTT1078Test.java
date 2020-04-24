@@ -13,7 +13,7 @@ public class JTT1078Test {
     config.put("rtmpHost", "127.0.0.1");
     config.put("rtmpPort", 1935);
     config.put("host", "0.0.0.0");
-    config.put("port", 2935);
+    config.put("port", 39102);
     config.put("app", "live");
 
     DeploymentOptions options = new DeploymentOptions();
