@@ -11,6 +11,15 @@
 
   <artifactId>jtt1078</artifactId>
   <name>jtt1078-server</name>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.tuna</groupId>
+      <artifactId>rtmp-client</artifactId>
+      <version>1.0.0</version>
+    </dependency>
+  </dependencies>
+
   <build>
     <plugins>
       <plugin>
@@ -21,23 +30,6 @@
           <target>13</target>
         </configuration>
       </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <source>13</source>
-          <target>13</target>
-        </configuration>
-      </plugin>
     </plugins>
   </build>
-
-  <dependencies>
-    <dependency>
-      <groupId>com.tuna</groupId>
-      <artifactId>rtmp-client</artifactId>
-      <version>1.0.0</version>
-    </dependency>
-  </dependencies>
-
 </project>
